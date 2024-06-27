@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mqtt
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:rw
+      - ./mosquitto/data:/mosquitto/data:rw
+      - ./mosquitto/log:/mosquitto/log:rw
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    restart: unless-stopped
+
+volumes:
+  config:
+  data:
+  log:
