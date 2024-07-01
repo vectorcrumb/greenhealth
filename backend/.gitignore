@@ -1,2 +1,3 @@
 .venv/
 mosquitto/data/mosquitto.db
+__pycache__

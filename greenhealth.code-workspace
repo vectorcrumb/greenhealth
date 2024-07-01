@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "devices/rover"
+		},
+		{
+			"path": "devices/common"
+		},
+		{
+			"path": "backend"
+		}
+	],
+	"settings": {}
+}

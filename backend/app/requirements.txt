@@ -1,2 +1,4 @@
 paho-mqtt==2.1.0
 sentinel==1.0.0
+matplotlib==3.9.0
+networkx==3.3
