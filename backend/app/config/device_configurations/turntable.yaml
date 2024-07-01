@@ -1,0 +1,43 @@
+ConnVerA:
+  type: connection
+  orientation: 1
+ConnHorA:
+  type: connection
+  orientation: 0
+ConnVerB:
+  type: connection
+  orientation: 1
+ConnHorB:
+  type: connection
+  orientation: 0
+Vertical:
+  type: location
+  orientation: 1
+Horizontal:
+  type: location
+  orientation: 0
+Turntable:
+  type: turntable
+edges:
+  - source: ConnVerA
+    target: Turntable
+    distance: 0.5
+  - source: ConnHorA
+    target: Turntable
+    distance: 0.5
+  - source: ConnHorB
+    target: Horizontal
+    distance: 0.5
+    directed: True
+  - source: Vertical
+    target: Turntable
+    distance: 0.5
+  - source: Vertical
+    target: ConnVerB
+    distance: 0.5
+    directed: True
+  - source: Horizontal
+    target: Turntable
+    distance: 0.5
+attributes:
+  attr1: 1

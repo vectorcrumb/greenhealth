@@ -3,6 +3,7 @@ import paho.mqtt.client as paho
 import queue
 from typing import Any
 import sentinel
+import logging
 
 ThreadEnd = sentinel.create("ThreadEnd")
 
@@ -12,6 +13,7 @@ class MQTTPublisher(threading.Thread):
         self._queue = queue.Queue()
         self.mqtt_client = mqtt_client
         self.daemon = True
+        logging.debug("MQTT Publisher thread ready")
     
     def enqueue(self, msg: Any):
         self._queue.put(msg)
@@ -21,7 +23,7 @@ class MQTTPublisher(threading.Thread):
 
     def run(self):
         while True:
-            qelem = self.queue.get()
-            print(f"Queue elem: {qelem}")
+            qelem = self._queue.get()
+            logging.debug(f"Queue elem: {qelem}")
             if qelem is ThreadEnd:
                 break
