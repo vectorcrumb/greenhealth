@@ -1,15 +1,17 @@
 from enum import Enum
 from typing import Union
-from .generic_node import GenericNode
-from .connection import ConnectionNode
-from .location import LocationNode
-from .turntable import TurntableNode
+from nodes.generic_node import GenericNode
+from nodes.connection import ConnectionNode
+from nodes.location import LocationNode
+from nodes.turntable import TurntableNode
+
 
 class NodeType(Enum):
     NONE = 0
     LOCATION = 1
     CONNECTION = 2
     TURNTABLE = 3
+
 
 class NodeFactory:
     def create_node(node_type: NodeType, **kwargs) -> Union[GenericNode, None]:

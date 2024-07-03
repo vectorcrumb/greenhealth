@@ -12,6 +12,7 @@ class DeviceType(Enum):
     MOD_GENERIC = 3
     MOD_ROTATION = 4
 
+
 class DeviceFactory:
     def create_device(device_type: DeviceType, **kwargs):
         print(kwargs)

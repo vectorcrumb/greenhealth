@@ -1,4 +1,5 @@
-from .generic_node import GenericNode
+from nodes.generic_node import GenericNode
+
 
 class LocationNode(GenericNode):
     def __init__(self, name) -> None:

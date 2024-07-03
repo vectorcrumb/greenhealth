@@ -13,13 +13,19 @@ from devices.device import DeviceType, DeviceFactory
 
 logging.basicConfig(level=logging.DEBUG)
 
-client = paho.Client(paho.CallbackAPIVersion.VERSION2, client_id="master", protocol=paho.MQTTv311)
+client = paho.Client(
+    paho.CallbackAPIVersion.VERSION2, client_id="master", protocol=paho.MQTTv311
+)
 client.username_pw_set("device", "goodlife")
 client.connect("localhost", 1883, keepalive=30)
 device_manager = Manager(client)
 
+
 def on_sub(client: paho.Client, userdata: Any, mid: int, reason_code_list, properties):
-    print(f"SUB: Client {client} got data: {userdata} with mid: {mid} and reasons: {reason_code_list}")
+    print(
+        f"SUB: Client {client} got data: {userdata} with mid: {mid} and reasons: {reason_code_list}"
+    )
+
 
 def on_msg(client: paho.Client, userdata: Any, message: paho.MQTTMessage):
     logging.debug(f"MSG: Client {client} got data: {userdata} with message: {message}")
@@ -29,16 +35,21 @@ def on_msg(client: paho.Client, userdata: Any, message: paho.MQTTMessage):
             try:
                 msg: Dict[str, str] = json.loads(message.payload)
                 if not message_validator(msg, TOPIC_DISCOVERY):
-                    raise ValueError(f"JSON msg on '{TOPIC_DISCOVERY}' contains incorrect keys: {msg.keys()}")
-                device_type = DeviceType[msg['type'].upper()]
+                    raise ValueError(
+                        f"JSON msg on '{TOPIC_DISCOVERY}' contains incorrect keys: {msg.keys()}"
+                    )
+                device_type = DeviceType[msg["type"].upper()]
                 device = DeviceFactory.create_device(device_type)
-                device_manager.append(msg['id'], device)
+                device_manager.append(msg["id"], device)
             except json.JSONDecodeError:
-                logging.error(f"JSON parsing of msg on '{TOPIC_DISCOVERY}' failed. Message contents: {message}")
+                logging.error(
+                    f"JSON parsing of msg on '{TOPIC_DISCOVERY}' failed. Message contents: {message}"
+                )
                 traceback.print_exc()
             except KeyError:
                 logging.error(f"Discovery msg type is invalid: {msg['type']}")
                 traceback.print_exc()
+
 
 client.on_subscribe = on_sub
 client.on_message = on_msg

@@ -7,6 +7,7 @@ import logging
 
 ThreadEnd = sentinel.create("ThreadEnd")
 
+
 class MQTTPublisher(threading.Thread):
     def __init__(self, mqtt_client: paho.Client):
         super().__init__()
@@ -14,7 +15,7 @@ class MQTTPublisher(threading.Thread):
         self.mqtt_client = mqtt_client
         self.daemon = True
         logging.debug("MQTT Publisher thread ready")
-    
+
     def enqueue(self, msg: Any):
         self._queue.put(msg)
 
