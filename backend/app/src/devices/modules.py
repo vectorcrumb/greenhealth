@@ -2,16 +2,19 @@ import yaml
 from nodes.node import NodeFactory, NodeType
 import networkx as nx
 import os
+from mqtt_pub import MQTTPublisher, MQTTPublishable
+from devices.device import GenericDevice
 
 
-class GenericModule:
+class GenericModule(GenericDevice):
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, id: str, publisher: MQTTPublisher, **kwargs) -> None:
+        super().__init__(id, publisher)
         self._map = nx.DiGraph()
         self._configuration = {}
         self._device_configs_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "../../config/device_configurations",
+            "../../config/device_maps",
         )
 
     def is_map_built(self) -> bool:
@@ -46,8 +49,8 @@ class GenericModule:
 
 class RotationModule(GenericModule):
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__()
+    def __init__(self, id: str, publisher: MQTTPublisher, **kwargs) -> None:
+        super().__init__(id, publisher)
         with open(
             os.path.join(self._device_configs_path, "turntable.yaml")
         ) as configuration_file:
