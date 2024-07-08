@@ -1,0 +1,30 @@
+pub:
+  discovery:
+    id: str_t
+    type: ROVER
+  "$ID$/skills/resp":
+    cmd:
+      move_mm: int_t
+      timeout_ms: int_t
+    move_to_next_node: {}
+    move_n_nodes:
+      "n": int_t
+      timeout_ms: int_t
+  "$ID$/cmd/fb":
+    elapsed_ms: int_t
+  "$ID$/cmd/res":
+    success: bool_t
+    total_time_ms: int_t
+sub:
+  "$ID$/ack":
+    ack: bool_t
+  "$ID$/skills/req": {}
+  "$ID$/cmd":
+  "$ID$/cmd/move_mm":
+    mm: int_t
+    timeout_ms: int_t
+  "$ID$/cmd/move_to_next_node":
+    timeout_ms: int_t
+  "$ID$/cmd/move_n_nodes":
+    "n": int_t
+    timeout_ms: int_t
