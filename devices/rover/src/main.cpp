@@ -1,16 +1,18 @@
 #include <Arduino.h>
 
 #include <WiFi.h>
-#include <PubSubClient.h>
+#include <MQTT.h>
+// #include <PubSubClient.h>
 #include <WiFiManager.h>
 #include <AccelStepper.h>
 
 #include "definitions.hpp"
 
-#define STEPPER_STP_PIN 1
-#define STEPPER_DIR_PIN 1
-#define STEPPER_ENA_PIN 1
-#define HALL_SENSOR_PIN 1
+#define STEPPER_STP_PIN 32
+#define STEPPER_DIR_PIN 26
+#define STEPPER_ENA_PIN 33
+#define STEPPER_ALARM_PIN 27
+#define HALL_SENSOR_PIN 34
 
 #define STEPPER_STEPS_PER_REV 1
 #define STEPPER_MAX_STEPS_PER_SEC 1
@@ -19,8 +21,13 @@
 void mqtt_callback(char *topic, byte *payload, unsigned int length);
 
 WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+MQTTClient mqttClient;
+// PubSubClient mqttClient(wifiClient);
 AccelStepper stepper(AccelStepper::DRIVER, STEPPER_STP_PIN, STEPPER_DIR_PIN);
+bool connection_established = false;
+bool action_in_progress = false;
+bool action_completed = false;
+long action_start_time = 0;
 
 void setup()
 {
@@ -48,12 +55,14 @@ void setup()
   String mac_addr = WiFi.macAddress();
   mac_addr.replace(":", "");
   snprintf(mqtt_client_id, sizeof(mqtt_client_id), mqtt_client_id_templ, mac_addr.c_str());
-  snprintf(mqtt_topic_pub_skills, sizeof(mqtt_topic_pub_skills), mqtt_topic_pub_skills_templ, mqtt_client_id);
-  snprintf(mqtt_topic_sub_command, sizeof(mqtt_topic_sub_command), mqtt_topic_sub_command_templ, mqtt_client_id);
-  snprintf(mqtt_topic_pub_stage, sizeof(mqtt_topic_pub_stage), mqtt_topic_pub_stage_templ, mqtt_client_id);
+  snprintf(TOPIC(skills), sizeof(TOPIC(skills)), TOPIC_TEMPL(skills), mqtt_client_id);
+  snprintf(TOPIC(cmd), sizeof(TOPIC(cmd)), TOPIC_TEMPL(cmd), mqtt_client_id);
+  snprintf(TOPIC(cmd_fb), sizeof(TOPIC(cmd_fb)), TOPIC_TEMPL(cmd_fb), mqtt_client_id);
+  snprintf(TOPIC(cmd_res), sizeof(TOPIC(cmd_res)), TOPIC_TEMPL(cmd_res), mqtt_client_id);
+  snprintf(TOPIC(ack), sizeof(TOPIC(ack)), TOPIC_TEMPL(ack), mqtt_client_id);
   // Setup MQTT
-  mqttClient.setServer(mqtt_broker, mqtt_port);
-  mqttClient.setCallback(mqtt_callback);
+  mqttClient.begin(mqtt_broker, mqtt_port, wifiClient);
+  mqttClient.onMessageAdvanced(mqtt_callback);
   while (!mqttClient.connected())
   {
     Serial.printf("Connecting to MQTT broker with id %s", mqtt_client_id);
@@ -64,23 +73,39 @@ void setup()
     else
     {
       Serial.print(F("MQTT connection failed with "));
-      Serial.println(mqttClient.state());
+      Serial.println(mqttClient.lastError());
       delay(2000);
     }
   }
   // Establish subscriptions
-  mqttClient.subscribe(mqtt_topic_sub_command, 1);
+  mqttClient.subscribe(TOPIC(cmd), 1);
+  mqttClient.subscribe(TOPIC(ack), 1);
   // Publish to registration topic
-  mqttClient.publish(mqtt_topic_register, mqtt_client_id);
+  mqttClient.publish(mqtt_topic_register, mqtt_client_id, false, 1);
 }
 
 void loop()
 {
   // put your main code here, to run repeatedly:
   mqttClient.loop();
+  if (action_completed && action_in_progress)
+  {
+    long total_time_ms = pdTICKS_TO_MS(xTaskGetTickCount()) - action_start_time;
+    snprintf(MSG(cmd_res), sizeof(MSG(cmd_res)), MSG_TEMPL(cmd_res), btoa(true), total_time_ms);
+    mqttClient.publish(TOPIC(cmd_res), MSG(cmd_res), false, 1);
+    action_in_progress = false;
+  }
+  else if (action_in_progress)
+  {
+    long elapsed_ms = pdTICKS_TO_MS(xTaskGetTickCount()) - action_start_time;
+    snprintf(MSG(cmd_fb), sizeof(MSG(cmd_fb)), MSG_TEMPL(cmd_fb), elapsed_ms);
+    mqttClient.publish(TOPIC(cmd_fb), MSG(cmd_fb), false, 1);
+  }
+
+  delay(5);
 }
 
-void mqtt_callback(char *topic, byte *payload, unsigned int length)
+void mqtt_callback(MQTTClient *client, char topic[], char payload[], int length)
 {
 
   ESP_LOGI("MQTT", "CB T:%s", topic);
@@ -91,9 +116,31 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length)
   token = strtok(topic, "/");
   token = strtok(topic, "/");
 
-  if (strcmp(token, mqtt_topic_sub_command) == 0)
+  if (strcmp(token, TOPIC(cmd)) == 0)
   {
+    ESP_LOGD("MQTT", "Command received");
+    if (action_in_progress)
+    {
+      return;
+    }
     // Implement COMMAND call
+    token = strtok(topic, "/");
+    if (strcmp(token, "move_mm") == 0)
+    {
+    }
+    else if (strcmp(token, "move_to_next_node") == 0)
+    {
+    }
+    else if (strcmp(token, "move_n_nodes") == 0)
+    {
+    }
+    action_in_progress = true;
+    action_start_time = pdTICKS_TO_MS(xTaskGetTickCount());
+  }
+  else if (strcmp(token, TOPIC(ack)) == 0)
+  {
+    connection_established = true;
+    ESP_LOGD("MQTT", "Connection ack'ed");
   }
   else
   {
