@@ -12,17 +12,24 @@ ThreadEnd = sentinel.create("ThreadEnd")
 
 @dataclass
 class MQTTPublishable:
+    """Class to hold a message to publish over MQTT"""
+
     topic: str
     message: str
     qos: int = 1
 
 
 class MQTTPublisher(threading.Thread):
+    """
+    This class is used for transmitting messages over MQTT concurrently with
+    the mqtt reception loop
+    """
+
     def __init__(self, mqtt_client: paho.Client):
         super().__init__()
         self._queue = queue.Queue()
         self.mqtt_client = mqtt_client
-        self.daemon = True
+        # self.daemon = True
         self.mqtt_lock = threading.Lock()
         logging.debug("MQTT Publisher thread ready")
 

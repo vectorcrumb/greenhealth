@@ -1,10 +1,8 @@
 from enum import Enum
 import threading
 import json
-
-from devices.modules import GenericModule, RotationModule
-from devices.vehicles import Rover
-from mqtt_pub import MQTTPublisher, MQTTPublishable
+import logging
+from comms.mqtt_pub import MQTTPublisher, MQTTPublishable
 
 
 class DeviceType(Enum):
@@ -17,8 +15,14 @@ class DeviceType(Enum):
 
 
 class GenericDevice:
+    """
+    A GenericDevice is an interface for other devices to inherit from. All
+    devices are considered to have the capacity of subscribing to topics and
+    sending and acknowledge message to the <ID>/ack topic. From this class we
+    construct GenericVehicle and GenericModule.
+    """
 
-    def __init__(self, id: str, publisher: MQTTPublisher) -> None:
+    def __init__(self, id: str, publisher: MQTTPublisher, **kwargs) -> None:
         self._id = id
         self._pub = publisher
         self._mqtt_lock = threading.Lock()
@@ -30,7 +34,8 @@ class GenericDevice:
 
     def subscribe_topics(self):
         with self._mqtt_lock:
-            for topic, qos in self.subscribe_topics:
+            for topic, qos in self.subscriptions_topics:
+                logging.debug(f"Device {__name__} is subscribing to topic {topic}")
                 self._pub.mqtt_client.subscribe(topic, qos)
 
     def acknowledge(self):
@@ -39,17 +44,3 @@ class GenericDevice:
         self._pub.enqueue(
             MQTTPublishable(topic=topic_name, message=json.dumps(payload))
         )
-
-
-class DeviceFactory:
-    def create_device(device_type: DeviceType, **kwargs):
-        print(kwargs)
-        match device_type:
-            case DeviceType.NONE:
-                return None
-            case DeviceType.ROVER:
-                return Rover(kwargs)
-            case DeviceType.MOD_GENERIC:
-                return GenericModule(kwargs)
-            case DeviceType.MOD_ROTATION:
-                return RotationModule(kwargs=kwargs)

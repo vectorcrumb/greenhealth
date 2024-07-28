@@ -1,12 +1,20 @@
 import yaml
-from nodes.node import NodeFactory, NodeType
+from nodes.node import NodeType, create_node
 import networkx as nx
 import os
-from mqtt_pub import MQTTPublisher, MQTTPublishable
+from comms.mqtt_pub import MQTTPublisher, MQTTPublishable
 from devices.device import GenericDevice
 
 
 class GenericModule(GenericDevice):
+    """
+    GenericModule represents an actual embeddable device which contains a
+    series of nodes. Nodes are abstract locations a vehicle may be located in
+    and may at times offer services. A module is described by the a device map
+    which lists all nodes (with types and orientations) and the edges connecting
+    said nodes. Edges are considered to be bidirectional unless indicated by
+    the 'directed' argument.
+    """
 
     def __init__(self, id: str, publisher: MQTTPublisher, **kwargs) -> None:
         super().__init__(id, publisher)
@@ -18,6 +26,11 @@ class GenericModule(GenericDevice):
         )
 
     def is_map_built(self) -> bool:
+        """A map is considered built if at least one node has been defined within it
+
+        Returns:
+            bool: True if at least one node is present in the map
+        """
         return bool(len(self._map.nodes))
 
     def spawn_nodes(self) -> bool:
